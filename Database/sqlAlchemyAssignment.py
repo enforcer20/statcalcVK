@@ -1,12 +1,20 @@
 from sqlalchemy.orm import create_engine, Session
-from sqlalchemy.orm import sessionmaker
-
-# Create an engine that stores data in the local directory's
-# sqlalchemy_example.db file.
 engine = create_engine('sqlite:////web/Sqlite-Data/example.db')
+session = Session(bind=engine)
 
-Session = sessionmaker(bind=engine)
+c1 = Customer(first_name='Toby',
+              last_name='Miller',
+              username='tmiller',
+              email='tmiller@example.com',
+              address='1662 Kinney Street',
+              town='Wolfden'
+              )
 
-session = Session()
-
-
+c2 = Customer(first_name='Scott',
+              last_name='Harvey',
+              username='scottharvey',
+              email='scottharvey@example.com',
+              address='424 Patterson Street',
+              town='Beckinsdale'
+              )
+c1, c2
