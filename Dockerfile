@@ -7,11 +7,22 @@
 
 #CMD ["python", "-m", "unittest", "discover", "-s", "Tests"]
 
-FROM python:3.7
+#FROM python:3.7
 
+
+#COPY . /web
+#WORKDIR /web
+#RUN pip install -r ./requirements.txt
+#ENTRYPOINT ["python"]
+#CMD ["/web/Database/sqlite_create.py"]
+
+
+FROM python:3.7
 
 COPY . /web
 WORKDIR /web
 RUN pip install -r ./requirements.txt
+WORKDIR /web
 ENTRYPOINT ["python"]
-CMD ["/web/Database/sqlite_create.py"]
+WORKDIR /web
+CMD ["/web/Database/sqlAlchemyAssignment.py"]
