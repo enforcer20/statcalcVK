@@ -1,6 +1,6 @@
-from sqlalchemy import Column, Integer, String, Numeric
+from sqlalchemy import Column, Integer, String, Numeric, ForeignKey
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, Session
+from sqlalchemy.orm import sessionmaker, Session, relationship
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 
@@ -32,6 +32,22 @@ class Item(Base):
     cost_price = Column(Numeric)
     selling_price = Column(Numeric)
     quantity = Column(Integer)
+
+
+class Order(Base):
+    __tablename__ = 'Order'
+
+    customer = Column(String, primary_key=True)
+    OrderLine = relationship("OrderLine")
+
+
+class OrderLine(Base):
+    __tablename__ = 'OrderLine'
+
+    id = Column(Integer, primary_key=True)
+    order = Column(String, ForeignKey('Order.customer'))
+    item = Column(String)
+    quantity = Column(Numeric)
 
 
 Base.metadata.create_all(engine)
@@ -105,3 +121,4 @@ i8 = Item(name='Water Bottle', cost_price=20.89, selling_price=25, quantity=50)
 
 session.add_all([i1, i2, i3, i4, i5, i6, i7, i8])
 session.commit()
+
