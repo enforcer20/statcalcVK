@@ -2,7 +2,7 @@ from sqlalchemy import Column, Integer, String, Numeric, ForeignKey
 from sqlalchemy.orm import sessionmaker, Session, relationship
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import desc, func, distinct, cast, Date, distinct, union
+from sqlalchemy import desc, func, distinct, cast, Date, distinct, union, DateTime, text, join
 from sqlalchemy import or_, and_, not_
 from datetime import datetime
 
@@ -20,6 +20,8 @@ class Customer(Base):
     email = Column(String(200), nullable=False)
     address = Column(String(200), nullable=False)
     town = Column(String(50), nullable=False)
+    created_on = Column(DateTime(), default=datetime.now)
+    updated_on = Column(DateTime(), default=datetime.now, onupdate=datetime.now)
     orders = relationship("Order", backref='customer')
 
 
@@ -36,6 +38,8 @@ class Order(Base):
     __tablename__ = 'orders'
     id = Column(Integer(), primary_key=True)
     customer_id = Column(Integer(), ForeignKey('customers.id'))
+    date_placed = Column(DateTime(), default=datetime.now, nullable=False)
+    date_shipped = Column(DateTime())
 
 
 class OrderLine(Base):
@@ -198,6 +202,11 @@ session.query(Item).filter(not_(Item.name.like("W%"))).all()
 session.query(Customer).limit(2).all()
 session.query(Customer).filter(Customer.address.ilike("%avenue")).limit(2).all()
 
+#join queries
+session.query(Customer).join(Order).all()
+print(session.query(Customer).join(Order))
+session.query(Customer.id, Customer.username, Order.id).join(Order).all()
+
 session.query(
     Customer.first_name,
     Item.name,
@@ -209,16 +218,21 @@ session.query(
     Order.id == 1,
 ).all()
 
-
 session.query(
     Customer.first_name,
     Order.id,
 ).outerjoin(Order).all()
 
+session.query(
+    Customer.first_name,
+    Order.id,
+).outerjoin(Order, full=True).all()
+
 session.query(func.count(Customer.id)).join(Order).filter(
     Customer.first_name == 'John',
     Customer.last_name == 'Green',
 ).group_by(Customer.id).scalar()
+
 
 # find the number of customers lives in each town
 
@@ -246,3 +260,17 @@ i = session.query(Item).get(8)
 i.selling_price = 25.91
 session.add(i)
 session.commit()
+
+# update quantity of all quantity of items to 60 whose name starts with 'W'
+
+session.query(Item).filter(
+    Item.name.ilike("W%")
+).update({"quantity": 60}, synchronize_session='fetch')
+session.commit()
+
+
+session.query(Customer).filter(text("first_name = 'John'")).all()
+
+session.query(Customer).filter(text("town like 'Nor%'")).all()
+
+session.query(Customer).filter(text("town like 'Nor%'")).order_by(text("first_name, id desc")).all()
