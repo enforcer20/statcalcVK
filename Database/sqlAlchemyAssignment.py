@@ -12,6 +12,7 @@ engine = create_engine('sqlite:////web/Sqlite-Data/example.db')
 Base = declarative_base()
 
 
+# Customer table
 class Customer(Base):
     __tablename__ = 'customers'
     id = Column(Integer(), primary_key=True)
@@ -26,6 +27,7 @@ class Customer(Base):
     orders = relationship("Order", backref='customer')
 
 
+# Item Table
 class Item(Base):
     __tablename__ = 'items'
     id = Column(Integer(), primary_key=True)
@@ -35,6 +37,7 @@ class Item(Base):
     quantity = Column(Integer(), nullable=False)
 
 
+# Order Table
 class Order(Base):
     __tablename__ = 'orders'
     id = Column(Integer(), primary_key=True)
@@ -43,6 +46,7 @@ class Order(Base):
     date_shipped = Column(DateTime())
 
 
+# OrderLine Table
 class OrderLine(Base):
     __tablename__ = 'order_lines'
     id = Column(Integer(), primary_key=True)
@@ -53,6 +57,7 @@ class OrderLine(Base):
     item = relationship("Item")
 
 
+# Define dispatch order
 def dispatch_order(order_id):
     # check whether order_id is valid or not
     order = session.query(Order).get(order_id)
@@ -77,6 +82,7 @@ def dispatch_order(order_id):
         print("Rolling back ...")
         session.rollback()
         print("Transaction failed.")
+
 
 Base.metadata.create_all(engine)
 
@@ -193,6 +199,10 @@ session.query(Item).filter(Item.name.ilike("wa%")).order_by(desc(Item.cost_price
 
 session.query(Customer).join(Order).all()
 
+# print(session.query(Customer).join(Order))
+
+session.query(Customer.id, Customer.username, Order.id).join(Order).all()
+
 # find all customers who either live in Peterbrugh or Norfolk
 
 session.query(Customer).filter(or_(
@@ -228,38 +238,6 @@ session.query(Item).filter(not_(Item.name.like("W%"))).all()
 session.query(Customer).limit(2).all()
 session.query(Customer).filter(Customer.address.ilike("%avenue")).limit(2).all()
 
-#join queries
-session.query(Customer).join(Order).all()
-print(session.query(Customer).join(Order))
-session.query(Customer.id, Customer.username, Order.id).join(Order).all()
-
-session.query(
-    Customer.first_name,
-    Item.name,
-    Item.selling_price,
-    OrderLine.quantity
-).join(Order).join(OrderLine).join(Item).filter(
-    Customer.first_name == 'John',
-    Customer.last_name == 'Green',
-    Order.id == 1,
-).all()
-
-session.query(
-    Customer.first_name,
-    Order.id,
-).outerjoin(Order).all()
-
-session.query(
-    Customer.first_name,
-    Order.id,
-).outerjoin(Order, full=True).all()
-
-session.query(func.count(Customer.id)).join(Order).filter(
-    Customer.first_name == 'John',
-    Customer.last_name == 'Green',
-).group_by(Customer.id).scalar()
-
-
 # find the number of customers lives in each town
 
 session.query(
@@ -274,7 +252,6 @@ session.query(
     func.count(distinct(Customer.town)),
     func.count(Customer.town)
 ).all()
-
 
 s1 = session.query(Item.id, Item.name).filter(Item.name.like("Wa%"))
 s2 = session.query(Item.id, Item.name).filter(Item.name.like("%e%"))
@@ -293,7 +270,6 @@ session.query(Item).filter(
     Item.name.ilike("W%")
 ).update({"quantity": 60}, synchronize_session='fetch')
 session.commit()
-
 
 session.query(Customer).filter(text("first_name = 'John'")).all()
 
