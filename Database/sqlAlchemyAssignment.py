@@ -241,3 +241,8 @@ s2 = session.query(Item.id, Item.name).filter(Item.name.like("%e%"))
 s1.union(s2).all()
 
 s1.union_all(s2).all()
+
+i = session.query(Item).get(8)
+i.selling_price = 25.91
+session.add(i)
+session.commit()
