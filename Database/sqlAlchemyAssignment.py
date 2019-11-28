@@ -1,8 +1,10 @@
-from sqlalchemy import Column, Integer, String, Numeric, ForeignKey, Float
+from sqlalchemy import Column, Integer, String, Numeric, ForeignKey
 from sqlalchemy.orm import sessionmaker, Session, relationship
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import desc
+from sqlalchemy import desc, func, distinct, cast, Date, distinct, union
+from sqlalchemy import or_, and_, not_
+from datetime import datetime
 
 engine = create_engine('sqlite:////web/Sqlite-Data/example.db')
 
@@ -156,8 +158,86 @@ for ol in c1.orders[1].order_lines:
 session.query(Item).filter(Item.name.ilike("wa%")).all()
 session.query(Item).filter(Item.name.ilike("wa%")).order_by(Item.cost_price).all()
 
+# descending order
 session.query(Item).filter(Item.name.ilike("wa%")).order_by(desc(Item.cost_price)).all()
 
 session.query(Customer).join(Order).all()
 
+# find all customers who either live in Peterbrugh or Norfolk
 
+session.query(Customer).filter(or_(
+    Customer.town == 'Peterbrugh',
+    Customer.town == 'Norfolk'
+)).all()
+
+# find all customers whose first name is John and live in Norfolk
+
+session.query(Customer).filter(and_(
+    Customer.first_name == 'John',
+    Customer.town == 'Norfolk'
+)).all()
+
+# find all johns who don't live in Peterbrugh
+
+session.query(Customer).filter(and_(
+    Customer.first_name == 'John',
+    not_(
+        Customer.town == 'Peterbrugh',
+    )
+)).all()
+
+session.query(Order).filter(Order.date_shipped == None).all()
+session.query(Order).filter(Order.date_shipped != None).all()
+session.query(Customer).filter(Customer.first_name.in_(['Toby', 'Sarah'])).all()
+session.query(Customer).filter(Customer.first_name.notin_(['Toby', 'Sarah'])).all()
+session.query(Item).filter(Item.cost_price.between(10, 50)).all()
+session.query(Item).filter(not_(Item.cost_price.between(10, 50))).all()
+session.query(Item).filter(Item.name.like("%r")).all()
+session.query(Item).filter(Item.name.ilike("w%")).all()
+session.query(Item).filter(not_(Item.name.like("W%"))).all()
+session.query(Customer).limit(2).all()
+session.query(Customer).filter(Customer.address.ilike("%avenue")).limit(2).all()
+
+session.query(
+    Customer.first_name,
+    Item.name,
+    Item.selling_price,
+    OrderLine.quantity
+).join(Order).join(OrderLine).join(Item).filter(
+    Customer.first_name == 'John',
+    Customer.last_name == 'Green',
+    Order.id == 1,
+).all()
+
+
+session.query(
+    Customer.first_name,
+    Order.id,
+).outerjoin(Order).all()
+
+session.query(func.count(Customer.id)).join(Order).filter(
+    Customer.first_name == 'John',
+    Customer.last_name == 'Green',
+).group_by(Customer.id).scalar()
+
+# find the number of customers lives in each town
+
+session.query(
+    func.count("*").label('town_count'),
+    Customer.town
+).group_by(Customer.town).having(func.count("*") > 2).all()
+
+session.query(Customer.town).filter(Customer.id < 10).all()
+session.query(Customer.town).filter(Customer.id < 10).distinct().all()
+
+session.query(
+    func.count(distinct(Customer.town)),
+    func.count(Customer.town)
+).all()
+
+
+s1 = session.query(Item.id, Item.name).filter(Item.name.like("Wa%"))
+s2 = session.query(Item.id, Item.name).filter(Item.name.like("%e%"))
+s1.union(s2).all()
+
+s1.union_all(s2).all()
