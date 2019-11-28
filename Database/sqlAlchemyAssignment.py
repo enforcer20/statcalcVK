@@ -2,9 +2,10 @@ from sqlalchemy import Column, Integer, String, Numeric, ForeignKey
 from sqlalchemy.orm import sessionmaker, Session, relationship
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import desc, func, distinct, cast, Date, distinct, union, DateTime, text, join
+from sqlalchemy import desc, func, cast, Date, distinct, union, DateTime, text, join, update
 from sqlalchemy import or_, and_, not_
 from datetime import datetime
+from sqlalchemy.exc import IntegrityError
 
 engine = create_engine('sqlite:////web/Sqlite-Data/example.db')
 
@@ -51,6 +52,31 @@ class OrderLine(Base):
     order = relationship("Order", backref='order_lines')
     item = relationship("Item")
 
+
+def dispatch_order(order_id):
+    # check whether order_id is valid or not
+    order = session.query(Order).get(order_id)
+
+    if not order:
+        raise ValueError("Invalid order id: {}.".format(order_id))
+
+    if order.date_shipped:
+        print("Order already shipped.")
+        return
+
+    try:
+        for i in order.order_lines:
+            i.item.quantity = i.item.quantity - i.quantity
+
+        order.date_shipped = datetime.now()
+        session.commit()
+        print("Transaction completed.")
+
+    except IntegrityError as e:
+        print(e)
+        print("Rolling back ...")
+        session.rollback()
+        print("Transaction failed.")
 
 Base.metadata.create_all(engine)
 
@@ -274,3 +300,8 @@ session.query(Customer).filter(text("first_name = 'John'")).all()
 session.query(Customer).filter(text("town like 'Nor%'")).all()
 
 session.query(Customer).filter(text("town like 'Nor%'")).order_by(text("first_name, id desc")).all()
+
+session.commit()
+
+dispatch_order(1)
+dispatch_order(2)
