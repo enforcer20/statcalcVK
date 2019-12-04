@@ -274,21 +274,40 @@ for row in result:
     print("Name: ", row.name, " Cost Price:", row.cost_price, " Selling Price:", row.selling_price, " Quantity:",
           row.quantity)
 
-session.query(Item).filter(Item.name.like("%r")).all()
-session.query(Item).filter(Item.name.ilike("w%")).all()
-session.query(Item).filter(not_(Item.name.like("W%"))).all()
-session.query(Customer).limit(2).all()
-session.query(Customer).filter(Customer.address.ilike("%avenue")).limit(2).all()
+result = session.query(Item).filter(Item.name.like("%r")).all()
+print("All Items whose name ends with an 'r'")
+for row in result:
+    print("Name: ", row.name, " Cost Price:", row.cost_price, " Selling Price:", row.selling_price, " Quantity:",
+          row.quantity)
+
+result = session.query(Item).filter(Item.name.ilike("w%")).all()
+print("All Items whose name starts with 'w'")
+for row in result:
+    print("Name: ", row.name, " Cost Price:", row.cost_price, " Selling Price:", row.selling_price, " Quantity:",
+          row.quantity)
+
+result = session.query(Customer).limit(2).all()
+print("Printing all customers but limit them to 2")
+for row in result:
+    print("Name: ", row.first_name, " ", row.last_name, " Address:", row.address, " Email:", row.email)
+
 
 # find the number of customers lives in each town
 
-session.query(
+result = session.query(
     func.count("*").label('town_count'),
     Customer.town
 ).group_by(Customer.town).having(func.count("*") > 2).all()
+print("Find the number of customers living in each town")
+print(result)
 
-session.query(Customer.town).filter(Customer.id < 10).all()
-session.query(Customer.town).filter(Customer.id < 10).distinct().all()
+result = session.query(Customer.town).filter(Customer.id < 10).all()
+print("Find the number of id < 10")
+print(result)
+
+result = session.query(Customer.town).filter(Customer.id < 10).distinct().all()
+print("Find distinct id < 10")
+print(result)
 
 session.query(
     func.count(distinct(Customer.town)),
@@ -298,8 +317,12 @@ session.query(
 s1 = session.query(Item.id, Item.name).filter(Item.name.like("Wa%"))
 s2 = session.query(Item.id, Item.name).filter(Item.name.like("%e%"))
 s1.union(s2).all()
+print("Union query")
+print (s1.union(s2).all())
 
 s1.union_all(s2).all()
+print("Union all query")
+print (s1.union_all(s2).all())
 
 i = session.query(Item).get(8)
 i.selling_price = 25.91
@@ -308,18 +331,18 @@ session.commit()
 
 # update quantity of all quantity of items to 60 whose name starts with 'W'
 
-session.query(Item).filter(
+result = session.query(Item).filter(
     Item.name.ilike("W%")
 ).update({"quantity": 60}, synchronize_session='fetch')
+print("Update quantity of all quantity of items to 60 whose name starts with 'W'")
+print(result)
 session.commit()
 
-session.query(Customer).filter(text("first_name = 'John'")).all()
-
-session.query(Customer).filter(text("town like 'Nor%'")).all()
-
-session.query(Customer).filter(text("town like 'Nor%'")).order_by(text("first_name, id desc")).all()
-
+result = session.query(Item).filter(Item.name == 'Monitor').one()
+session.delete(result)
 session.commit()
+print("Deleting Item name = Monitor")
+print(result.name)
 
 dispatch_order(1)
 dispatch_order(2)
